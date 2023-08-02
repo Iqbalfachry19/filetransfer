@@ -6,7 +6,7 @@ const AWS = require('aws-sdk'),
 const multer = require('multer');
 const multerS3 = require('multer-s3');
 const dotenv = require('dotenv');
-
+const mime = require('mime');
 dotenv.config(); // Load environment variables from .env file
 
 const app = express();
@@ -48,27 +48,36 @@ const upload = multer({
 // ...
 
 // Route to download files from S3
-// Route to download files from S3
-// Route to download files from S3
 app.get('/downloads/:filename', async (req, res) => {
-  const filename = req.params.filename;
-
-  // Ensure the filename is present
-  if (!filename) {
-    return res.status(400).json({ success: false, message: 'No filename specified.' });
-  }
-
-  const params = {
-    Bucket: s3BucketName,
-    Key: `uploads/${filename}`,
-  };
-
-  // Get the file stream from S3
-  const response = await s3.getObject(params)
-
-response.Body.pipe(res);
-});
-
+    const filename = req.params.filename;
+  
+    // Ensure the filename is present
+    if (!filename) {
+      return res.status(400).json({ success: false, message: 'No filename specified.' });
+    }
+  
+    const params = {
+      Bucket: s3BucketName,
+      Key: `uploads/${filename}`,
+    };
+  
+    try {
+      // Get the file stream from S3
+      const response = await s3.getObject(params);
+  
+      // Set appropriate headers for the file download
+      const contentType = mime.getType(filename);
+      if (contentType) {
+        res.setHeader('Content-Type', contentType);
+      }
+  
+      // Stream the file to the response
+      response.Body.pipe(res);
+    } catch (err) {
+      console.error('Error fetching file from S3:', err);
+      res.status(500).json({ success: false, message: 'Error fetching file from S3.' });
+    }
+  });
   
   // ...
   
