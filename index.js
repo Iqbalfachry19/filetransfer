@@ -11,29 +11,29 @@ app.get("/",(req,res)=>{
     res.json({success:true})
 })
 
-app.post('/upload', upload.single('file'), (req, res) => {
-    // Check if a file was uploaded
-    if (!req.file) {
-        return res.status(400).json({ success: false, message: 'No file uploaded.' });
-    }
+// app.post('/upload', upload.single('file'), (req, res) => {
+//     // Check if a file was uploaded
+//     if (!req.file) {
+//         return res.status(400).json({ success: false, message: 'No file uploaded.' });
+//     }
 
-    // Check the file type (optional)
-    const allowedFileTypes = ['image/jpeg', 'image/png'];
-    if (!allowedFileTypes.includes(req.file.mimetype)) {
-        // Delete the file from the temporary uploads directory
-        fs.unlinkSync(req.file.path);
-        return res.status(400).json({ success: false, message: 'Invalid file type. Only JPEG and PNG files are allowed.' });
-    }
+//     // Check the file type (optional)
+//     const allowedFileTypes = ['image/jpeg', 'image/png'];
+//     if (!allowedFileTypes.includes(req.file.mimetype)) {
+//         // Delete the file from the temporary uploads directory
+//         fs.unlinkSync(req.file.path);
+//         return res.status(400).json({ success: false, message: 'Invalid file type. Only JPEG and PNG files are allowed.' });
+//     }
 
-    // Here, you can perform additional checks or validations on the file if needed.
-    // For example, check the file size, scan for viruses, etc.
+//     // Here, you can perform additional checks or validations on the file if needed.
+//     // For example, check the file size, scan for viruses, etc.
 
-    // Move the file from the temporary uploads directory to a safe location
-    const targetPath = 'safe_uploads/' + req.file.originalname;
-    fs.renameSync(req.file.path, targetPath);
+//     // Move the file from the temporary uploads directory to a safe location
+//     const targetPath = 'safe_uploads/' + req.file.originalname;
+//     fs.renameSync(req.file.path, targetPath);
 
-    res.json({ success: true, message: 'File uploaded successfully.' });
-});
+//     res.json({ success: true, message: 'File uploaded successfully.' });
+// });
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
