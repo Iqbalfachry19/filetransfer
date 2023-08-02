@@ -17,7 +17,7 @@ AWS.config.update({
 });
 
 const s3 = new AWS.S3();
-const s3BucketName = process.env.CYCLIC_BUCKET_NAME;
+const s3BucketName = "cyclic-long-bikini-bass-us-west-1";
 
 // Set up multer to handle file uploads directly to S3
 const upload = multer({
