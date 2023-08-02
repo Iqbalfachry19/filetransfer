@@ -62,7 +62,7 @@ app.get('/downloads/:filename', (req, res) => {
         console.error('Error fetching file from S3:', err);
         return res.status(500).json({ success: false, message: 'Error fetching file from S3.' });
       }
-  
+   console.log(data)
       // Set appropriate headers for the file download
       res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
       res.setHeader('Content-Type', data.ContentType);
