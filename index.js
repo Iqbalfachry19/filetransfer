@@ -45,26 +45,33 @@ const upload = multer({
 });
 
 // Route to download files from S3
+// ...
+
+// Route to download files from S3
 app.get('/downloads/:filename', (req, res) => {
-  const filename = req.params.filename;
-
-  const params = {
-    Bucket: s3BucketName,
-    Key: `uploads/${filename}`,
-  };
-
-  // Get the file from S3
-  s3.getObject(params, (err, data) => {
-    if (err) {
-      console.error('Error fetching file from S3:', err);
-      return res.status(500).json({ success: false, message: 'Error fetching file from S3.' });
-    }
-
-    // Set appropriate headers for the file download
-    res.attachment(filename);
-    res.send(data.Body);
+    const filename = req.params.filename;
+  
+    const params = {
+      Bucket: s3BucketName,
+      Key: `uploads/${filename}`,
+    };
+  
+    // Get the file from S3
+    s3.getObject(params, (err, data) => {
+      if (err) {
+        console.error('Error fetching file from S3:', err);
+        return res.status(500).json({ success: false, message: 'Error fetching file from S3.' });
+      }
+  
+      // Set appropriate headers for the file download
+      res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+      res.setHeader('Content-Type', data.ContentType);
+      res.send(data.Body);
+    });
   });
-});
+  
+  // ...
+  
 app.get('/list-uploads', (req, res) => {
     const params = {
       Bucket: s3BucketName,
