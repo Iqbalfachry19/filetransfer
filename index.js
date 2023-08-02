@@ -49,6 +49,7 @@ const upload = multer({
 
 // Route to download files from S3
 // Route to download files from S3
+// Route to download files from S3
 app.get('/downloads/:filename', (req, res) => {
     const filename = req.params.filename;
   
@@ -62,26 +63,23 @@ app.get('/downloads/:filename', (req, res) => {
       Key: `uploads/${filename}`,
     };
   
-    // Get the file from S3
-    s3.getObject(params, (err, data) => {
-      if (err) {
-        console.error('Error fetching file from S3:', err);
-        return res.status(500).json({ success: false, message: 'Error fetching file from S3.' });
-      }
+    // Get the file stream from S3
+    const fileStream = s3.getObject(params).createReadStream();
   
-      // Ensure data has content
-      if (!data || !data.Body) {
-        return res.status(500).json({ success: false, message: 'No file data found.' });
-      }
-  
-      // Set appropriate headers for the file download
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      res.setHeader('Content-Type', data.ContentType);
-  
-      // Return the file data
-      res.send(data.Body);
+    // Stream the file to the response
+    fileStream.on('error', (err) => {
+      console.error('Error fetching file from S3:', err);
+      res.status(500).json({ success: false, message: 'Error fetching file from S3.' });
     });
+  
+    // Set appropriate headers for the file download
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Type', data.ContentType);
+  
+    // Pipe the file stream to the response
+    fileStream.pipe(res);
   });
+  
   
   // ...
   
