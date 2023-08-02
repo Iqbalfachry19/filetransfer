@@ -65,7 +65,25 @@ app.get('/downloads/:filename', (req, res) => {
     res.send(data.Body);
   });
 });
-
+app.get('/list-uploads', (req, res) => {
+    const params = {
+      Bucket: s3BucketName,
+      Prefix: 'uploads/', // The prefix to filter files in the 'uploads/' directory
+    };
+  
+    // Get the list of objects in the specified S3 bucket
+    s3.listObjectsV2(params, (err, data) => {
+      if (err) {
+        console.error('Error listing objects from S3:', err);
+        return res.status(500).json({ success: false, message: 'Error listing uploads from S3.' });
+      }
+  
+      // Extract the list of filenames from the data response
+      const uploads = data.Contents.map((obj) => obj.Key.replace('uploads/', ''));
+  
+      res.json({ success: true, uploads });
+    });
+  });
 // Route to handle file uploads to S3
 app.post('/upload', upload.single('file'), (req, res) => {
   // Check if a file was uploaded
