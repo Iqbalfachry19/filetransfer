@@ -1,40 +1,84 @@
 const express = require('express');
+const AWS = require('aws-sdk');
 const multer = require('multer');
-const fs = require('fs');
+const multerS3 = require('multer-s3');
+const dotenv = require('dotenv');
+
+dotenv.config(); // Load environment variables from .env file
+
 const app = express();
 const port = 3000;
 
-// Set up multer to handle file uploads
-const upload = multer({ dest: 'uploads/' });
-app.use('/downloads', express.static('safe_uploads'));
-app.get("/",(req,res)=>{
-    res.json({success:true})
-})
+// Set up AWS S3
+AWS.config.update({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION,
+});
 
-// app.post('/upload', upload.single('file'), (req, res) => {
-//     // Check if a file was uploaded
-//     if (!req.file) {
-//         return res.status(400).json({ success: false, message: 'No file uploaded.' });
-//     }
+const s3 = new AWS.S3();
+const s3BucketName = process.env.S3_BUCKET_NAME;
 
-//     // Check the file type (optional)
-//     const allowedFileTypes = ['image/jpeg', 'image/png'];
-//     if (!allowedFileTypes.includes(req.file.mimetype)) {
-//         // Delete the file from the temporary uploads directory
-//         fs.unlinkSync(req.file.path);
-//         return res.status(400).json({ success: false, message: 'Invalid file type. Only JPEG and PNG files are allowed.' });
-//     }
+// Set up multer to handle file uploads directly to S3
+const upload = multer({
+  storage: multerS3({
+    s3: s3,
+    bucket: s3BucketName,
+    key: function (req, file, cb) {
+      cb(null, 'uploads/' + file.originalname);
+    },
+  }),
+  limits: {
+    fileSize: 1024 * 1024 * 5, // 5 MB file size limit (adjust as needed)
+  },
+  fileFilter: function (req, file, cb) {
+    // Check the file type (optional, same as in your existing code)
+    const allowedFileTypes = ['image/jpeg', 'image/png'];
+    if (!allowedFileTypes.includes(file.mimetype)) {
+      return cb(new Error('Invalid file type. Only JPEG and PNG files are allowed.'));
+    }
+    cb(null, true);
+  },
+});
 
-//     // Here, you can perform additional checks or validations on the file if needed.
-//     // For example, check the file size, scan for viruses, etc.
+// Route to download files from S3
+app.get('/downloads/:filename', (req, res) => {
+  const filename = req.params.filename;
 
-//     // Move the file from the temporary uploads directory to a safe location
-//     const targetPath = 'safe_uploads/' + req.file.originalname;
-//     fs.renameSync(req.file.path, targetPath);
+  const params = {
+    Bucket: s3BucketName,
+    Key: `uploads/${filename}`,
+  };
 
-//     res.json({ success: true, message: 'File uploaded successfully.' });
-// });
+  // Get the file from S3
+  s3.getObject(params, (err, data) => {
+    if (err) {
+      console.error('Error fetching file from S3:', err);
+      return res.status(500).json({ success: false, message: 'Error fetching file from S3.' });
+    }
+
+    // Set appropriate headers for the file download
+    res.attachment(filename);
+    res.send(data.Body);
+  });
+});
+
+// Route to handle file uploads to S3
+app.post('/upload', upload.single('file'), (req, res) => {
+  // Check if a file was uploaded
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'No file uploaded.' });
+  }
+
+  // The file has already been uploaded to S3, no need to do anything here.
+
+  res.json({ success: true, message: 'File uploaded successfully.' });
+});
+
+app.get("/", (req, res) => {
+  res.json({ success: true });
+});
 
 app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+  console.log(`Server running on port ${port}`);
 });
