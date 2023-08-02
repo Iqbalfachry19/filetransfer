@@ -50,36 +50,25 @@ const upload = multer({
 // Route to download files from S3
 // Route to download files from S3
 // Route to download files from S3
-app.get('/downloads/:filename', (req, res) => {
-    const filename = req.params.filename;
-  
-    // Ensure the filename is present
-    if (!filename) {
-      return res.status(400).json({ success: false, message: 'No filename specified.' });
-    }
-  
-    const params = {
-      Bucket: s3BucketName,
-      Key: `uploads/${filename}`,
-    };
-  
-    // Get the file stream from S3
-    const fileStream = s3.getObject(params).createReadStream();
-  
-    // Stream the file to the response
-    fileStream.on('error', (err) => {
-      console.error('Error fetching file from S3:', err);
-      res.status(500).json({ success: false, message: 'Error fetching file from S3.' });
-    });
-  
-    // Set appropriate headers for the file download
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.setHeader('Content-Type', data.ContentType);
-  
-    // Pipe the file stream to the response
-    fileStream.pipe(res);
-  });
-  
+app.get('/downloads/:filename', async (req, res) => {
+  const filename = req.params.filename;
+
+  // Ensure the filename is present
+  if (!filename) {
+    return res.status(400).json({ success: false, message: 'No filename specified.' });
+  }
+
+  const params = {
+    Bucket: s3BucketName,
+    Key: `uploads/${filename}`,
+  };
+
+  // Get the file stream from S3
+  const response = await s3.getObject(params)
+
+response.Body.pipe(res);
+});
+
   
   // ...
   
