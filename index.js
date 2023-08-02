@@ -1,5 +1,8 @@
 const express = require('express');
-const AWS = require('aws-sdk');
+const AWS = require('aws-sdk'),
+      {
+        S3
+      } = require("@aws-sdk/client-s3");
 const multer = require('multer');
 const multerS3 = require('multer-s3');
 const dotenv = require('dotenv');
@@ -16,8 +19,8 @@ AWS.config.update({
   region: process.env.AWS_REGION,
 });
 
-const s3 = new AWS.S3();
-const s3BucketName = "cyclic-long-bikini-bass-us-west-1";
+const s3 = new S3();
+const s3BucketName = process.env.CYCLIC_BUCKET_NAME;
 
 // Set up multer to handle file uploads directly to S3
 const upload = multer({
