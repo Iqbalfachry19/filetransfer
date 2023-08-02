@@ -48,8 +48,14 @@ const upload = multer({
 // ...
 
 // Route to download files from S3
+// Route to download files from S3
 app.get('/downloads/:filename', (req, res) => {
     const filename = req.params.filename;
+  
+    // Ensure the filename is present
+    if (!filename) {
+      return res.status(400).json({ success: false, message: 'No filename specified.' });
+    }
   
     const params = {
       Bucket: s3BucketName,
@@ -62,10 +68,17 @@ app.get('/downloads/:filename', (req, res) => {
         console.error('Error fetching file from S3:', err);
         return res.status(500).json({ success: false, message: 'Error fetching file from S3.' });
       }
-   console.log(data)
+  
+      // Ensure data has content
+      if (!data || !data.Body) {
+        return res.status(500).json({ success: false, message: 'No file data found.' });
+      }
+  
       // Set appropriate headers for the file download
-      res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.setHeader('Content-Type', data.ContentType);
+  
+      // Return the file data
       res.send(data.Body);
     });
   });
